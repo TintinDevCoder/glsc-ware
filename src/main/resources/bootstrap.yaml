@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: glsc-ware # 服务名称
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848 # nacos地址
+        username: nacos
+        password: nacos
+        file-extension: yaml # 文件后缀名
+        group: DEFAULT_GROUP
+        namespace: c5d6c163-3e4c-42fe-8f97-6c0a032af9d7
+        shared-configs: # 共享配置
+          - dataId: shared-usr.yaml # 共享mybatis配置
+            group: DEFAULT_GROUP
+            refresh: true
+          - dataId: common-env.yaml # 共享数据源配置
+            group: DEFAULT_GROUP
+            refresh: true
+        extension-configs: # 扩展配置
+          - dataId: ware-ext.yaml
+            group: DEFAULT_GROUP
+            refresh: true
