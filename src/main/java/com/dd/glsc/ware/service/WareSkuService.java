@@ -16,5 +16,12 @@ import java.util.Map;
 public interface WareSkuService extends IService<WareSkuEntity> {
 
     PageUtils queryPage(Map<String, Object> params);
+
+    /**
+     * 条件分页查询商品库存
+     * @param params
+     * @return
+     */
+    PageUtils queryPageOnCondition(Map<String, Object> params);
 }
 
