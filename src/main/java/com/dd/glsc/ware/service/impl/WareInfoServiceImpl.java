@@ -26,4 +26,22 @@ public class WareInfoServiceImpl extends ServiceImpl<WareInfoDao, WareInfoEntity
         return new PageUtils(page);
     }
 
+    @Override
+    public PageUtils queryPageOnCondition(Map<String, Object> params) {
+        QueryWrapper<WareInfoEntity> wareInfoEntityQueryWrapper = new QueryWrapper<>();
+        String key = (String) params.get("key");
+        if (key != null && !"".equals(key)) {
+            wareInfoEntityQueryWrapper.and(wrapper -> {
+                wrapper.eq("id", key).or().like("name", key)
+                        .or().like("address", key).or().like("areacode", key);
+            });
+        }
+        IPage<WareInfoEntity> page = this.page(
+                new Query<WareInfoEntity>().getPage(params),
+                wareInfoEntityQueryWrapper
+        );
+
+        return new PageUtils(page);
+    }
+
 }
