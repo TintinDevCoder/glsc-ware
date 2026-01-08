@@ -161,5 +161,17 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
         return totcalPrice;
     }
 
+    @Override
+    public void removePurchaseDetail(List<Long> list) {
+        // 校验是否可删除
+        List<PurchaseDetailEntity> purchaseDetails = this.listByIds(list);
+        for (PurchaseDetailEntity purchaseDetail : purchaseDetails) {
+            if (purchaseDetail.getStatus() != 0) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单已分配，无法删除");
+            }
+        }
+        this.removeByIds(list);
+    }
+
 
 }

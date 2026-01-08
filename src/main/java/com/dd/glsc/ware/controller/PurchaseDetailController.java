@@ -82,7 +82,7 @@ public class PurchaseDetailController {
     @RequestMapping("/delete")
     //@RequiresPermissions("ware:purchasedetail:delete")
     public R delete(@RequestBody Long[] ids){
-		purchaseDetailService.removeByIds(Arrays.asList(ids));
+		purchaseDetailService.removePurchaseDetail(Arrays.asList(ids));
 
         return R.ok();
     }

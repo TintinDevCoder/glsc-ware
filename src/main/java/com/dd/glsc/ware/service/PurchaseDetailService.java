@@ -39,6 +39,18 @@ public interface PurchaseDetailService extends IService<PurchaseDetailEntity> {
      */
     void updatePurchaseDetail(PurchaseDetailEntity purchaseDetail);
 
+    /**
+     * 根据skuId和skuNum获取采购总价
+     * @param skuId
+     * @param skuNum
+     * @return
+     */
     public BigDecimal getTotalPriceByPurchaseId(Long skuId, Integer skuNum);
+
+    /**
+     * 删除采购需求
+     * @param list
+     */
+    void removePurchaseDetail(List<Long> list);
 }
 
