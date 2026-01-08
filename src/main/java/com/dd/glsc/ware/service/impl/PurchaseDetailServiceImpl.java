@@ -6,7 +6,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dd.common.common.BaseResponse;
+import com.dd.common.common.BusinessException;
+import com.dd.common.common.ErrorCode;
 import com.dd.common.to.SkuInfoTO;
+import com.dd.common.to.SkuTotalPriceTO;
 import com.dd.common.utils.PageUtils;
 import com.dd.common.utils.Query;
 import com.dd.glsc.ware.dao.PurchaseDetailDao;
@@ -19,10 +22,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -111,5 +112,54 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
 
         return new PageUtils(pager);
     }
+
+    @Override
+    public void savePurchaseDetail(PurchaseDetailEntity purchaseDetail) {
+        // 计算采购金额
+        // 校验参数
+        Long skuId = purchaseDetail.getSkuId();
+        Integer skuNum = purchaseDetail.getSkuNum();
+        if (skuId == null || skuNum == null || skuNum <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "SKU ID 和数量不能为空且数量必须大于0");
+        }
+        BigDecimal skuPrice = this.getTotalPriceByPurchaseId(skuId, skuNum);
+        purchaseDetail.setSkuPrice(skuPrice);
+        this.save(purchaseDetail);
+    }
+
+    @Override
+    public void updatePurchaseDetail(PurchaseDetailEntity purchaseDetail) {
+        // 校验是否可修改
+        PurchaseDetailEntity purchase = this.getById(purchaseDetail.getId());
+        if (purchase == null || purchase.getStatus() != 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单不存在或已分配");
+        }
+        // 修改采购金额
+        Long skuId = purchaseDetail.getSkuId();
+        Integer skuNum = purchaseDetail.getSkuNum();
+        if (skuId != null && (skuNum != null && skuNum > 0)) {
+            BigDecimal skuPrice = this.getTotalPriceByPurchaseId(skuId, skuNum);
+            purchaseDetail.setSkuPrice(skuPrice);
+        }
+        this.updateById(purchaseDetail);
+    }
+
+    /**
+     * 根据采购需求计算总价
+     * @param skuId,
+     * @param skuNum
+     * @return
+     */
+    @Override
+    public BigDecimal getTotalPriceByPurchaseId(Long skuId, Integer skuNum) {
+        List<SkuTotalPriceTO> skuTotalPriceTOList= new LinkedList<>();
+        SkuTotalPriceTO skuTotalPriceTO = new SkuTotalPriceTO();
+        skuTotalPriceTO.setSkuId(skuId);
+        skuTotalPriceTO.setNum(skuNum);
+        skuTotalPriceTOList.add(skuTotalPriceTO);
+        BigDecimal totcalPrice = productFeignService.getTotcalPrice(skuTotalPriceTOList);
+        return totcalPrice;
+    }
+
 
 }

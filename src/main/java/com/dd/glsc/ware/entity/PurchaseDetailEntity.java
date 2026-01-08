@@ -6,7 +6,13 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.io.Serializable;
 import java.util.Date;
+
+import com.dd.common.valid.group.AddGroup;
+import com.dd.common.valid.group.UpdateGroup;
 import lombok.Data;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 
 /**
  * 
@@ -24,6 +30,8 @@ public class PurchaseDetailEntity implements Serializable {
 	 * 
 	 */
 	@TableId
+    @Null(message = "新增不能指定id", groups = {AddGroup.class})
+    @NotNull(message = "修改id必须有值", groups = {UpdateGroup.class})
 	private Long id;
 	/**
 	 * 采购单id
@@ -36,6 +44,7 @@ public class PurchaseDetailEntity implements Serializable {
 	/**
 	 * 采购数量
 	 */
+    @NotNull(message = "商品数量必须有值", groups = {AddGroup.class})
 	private Integer skuNum;
 	/**
 	 * 采购金额
@@ -44,6 +53,7 @@ public class PurchaseDetailEntity implements Serializable {
 	/**
 	 * 仓库id
 	 */
+    @NotNull(message = "必须指定仓库", groups = {AddGroup.class})
 	private Long wareId;
 	/**
 	 * 状态[0新建，1已分配，2正在采购，3已完成，4采购失败]

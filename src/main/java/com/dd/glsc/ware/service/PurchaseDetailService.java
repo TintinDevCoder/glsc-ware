@@ -1,9 +1,12 @@
 package com.dd.glsc.ware.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.dd.common.to.SkuTotalPriceTO;
 import com.dd.common.utils.PageUtils;
 import com.dd.glsc.ware.entity.PurchaseDetailEntity;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,5 +26,19 @@ public interface PurchaseDetailService extends IService<PurchaseDetailEntity> {
      * @return
      */
     PageUtils queryPageOnCondition(Map<String, Object> params);
+
+    /**
+     * 保存采购需求
+     * @param purchaseDetail
+     */
+    void savePurchaseDetail(PurchaseDetailEntity purchaseDetail);
+
+    /**
+     * 更新采购需求
+     * @param purchaseDetail
+     */
+    void updatePurchaseDetail(PurchaseDetailEntity purchaseDetail);
+
+    public BigDecimal getTotalPriceByPurchaseId(Long skuId, Integer skuNum);
 }
 

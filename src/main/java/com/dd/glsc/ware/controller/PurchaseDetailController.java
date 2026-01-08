@@ -60,7 +60,7 @@ public class PurchaseDetailController {
     @RequestMapping("/save")
     //@RequiresPermissions("ware:purchasedetail:save")
     public R save(@RequestBody PurchaseDetailEntity purchaseDetail){
-		purchaseDetailService.save(purchaseDetail);
+		purchaseDetailService.savePurchaseDetail(purchaseDetail);
 
         return R.ok();
     }
@@ -71,7 +71,7 @@ public class PurchaseDetailController {
     @RequestMapping("/update")
     //@RequiresPermissions("ware:purchasedetail:update")
     public R update(@RequestBody PurchaseDetailEntity purchaseDetail){
-		purchaseDetailService.updateById(purchaseDetail);
+		purchaseDetailService.updatePurchaseDetail(purchaseDetail);
 
         return R.ok();
     }
