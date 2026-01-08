@@ -1,6 +1,7 @@
 package com.dd.glsc.ware.controller;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 //import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -33,6 +34,18 @@ import com.dd.common.utils.R;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    /**
+     * 领取采购单
+     * @param purchaseIds
+     * @return
+     */
+    @RequestMapping("/received")
+    //@RequiresPermissions("ware:purchase:list")
+    public BaseResponse purchaseReceived(@RequestBody List<Long> purchaseIds, @RequestParam Long userId){
+        purchaseService.purchaseReceived(purchaseIds, userId);
+        return ResultUtils.success();
+    }
 
     /**
      * 合并采购需求到采购单
@@ -97,7 +110,7 @@ public class PurchaseController {
     @RequestMapping("/update")
     //@RequiresPermissions("ware:purchase:update")
     public R update(@RequestBody PurchaseEntity purchase){
-		purchaseService.updateById(purchase);
+        purchaseService.updatePurchase(purchase);
 
         return R.ok();
     }

@@ -4,7 +4,10 @@ import java.util.Arrays;
 import java.util.Map;
 
 //import org.apache.shiro.authz.annotation.RequiresPermissions;
+import com.dd.common.valid.group.AddGroup;
+import com.dd.common.valid.group.UpdateGroup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +19,7 @@ import com.dd.glsc.ware.service.PurchaseDetailService;
 import com.dd.common.utils.PageUtils;
 import com.dd.common.utils.R;
 
+import javax.validation.Valid;
 
 
 /**
@@ -59,7 +63,7 @@ public class PurchaseDetailController {
      */
     @RequestMapping("/save")
     //@RequiresPermissions("ware:purchasedetail:save")
-    public R save(@RequestBody PurchaseDetailEntity purchaseDetail){
+    public R save(@Validated(value = {AddGroup.class}) @RequestBody PurchaseDetailEntity purchaseDetail){
 		purchaseDetailService.savePurchaseDetail(purchaseDetail);
 
         return R.ok();
@@ -70,7 +74,7 @@ public class PurchaseDetailController {
      */
     @RequestMapping("/update")
     //@RequiresPermissions("ware:purchasedetail:update")
-    public R update(@RequestBody PurchaseDetailEntity purchaseDetail){
+    public R update(@Validated(value = {UpdateGroup.class}) @RequestBody PurchaseDetailEntity purchaseDetail){
 		purchaseDetailService.updatePurchaseDetail(purchaseDetail);
 
         return R.ok();

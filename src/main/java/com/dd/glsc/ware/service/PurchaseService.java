@@ -5,6 +5,7 @@ import com.dd.common.utils.PageUtils;
 import com.dd.glsc.ware.entity.PurchaseEntity;
 import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,5 +38,17 @@ public interface PurchaseService extends IService<PurchaseEntity> {
      * @return
      */
     PageUtils queryPageOnCondition(Map<String, Object> params);
+
+    /**
+     * 领取采购单
+     * @param purchaseIds
+     */
+    void purchaseReceived(List<Long> purchaseIds, Long userId);
+
+    /**
+     * 更新采购单
+     * @param purchase
+     */
+    void updatePurchase(PurchaseEntity purchase);
 }
 

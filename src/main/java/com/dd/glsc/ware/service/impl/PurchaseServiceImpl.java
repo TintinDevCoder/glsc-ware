@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.dd.common.common.BusinessException;
 import com.dd.common.common.ErrorCode;
 import com.dd.common.constant.WareConstant;
+import com.dd.common.utils.R;
 import com.dd.glsc.ware.entity.PurchaseDetailEntity;
 import com.dd.glsc.ware.entity.PurchaseEntity;
 import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -65,6 +67,60 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
 
         return new PageUtils(page);
     }
+
+    /**
+     * 领取采购单
+     * @param purchaseIds
+     */
+    @Override
+    public void purchaseReceived(List<Long> purchaseIds, Long userId) {
+        if (purchaseIds != null && !purchaseIds.isEmpty()) {
+            // 检查采购单是否属于当前用户
+            QueryWrapper<PurchaseEntity> queryWrapper = new QueryWrapper<>();
+            queryWrapper.lambda()
+                    .in(PurchaseEntity::getId, purchaseIds)
+                    .in(PurchaseEntity::getStatus, WareConstant.PurchaseStatusEnum.NEW.getCode(), WareConstant.PurchaseStatusEnum.ASSIGNED.getCode())
+                    .eq(PurchaseEntity::getAssigneeId, userId);
+            long count = this.count(queryWrapper);
+            if (count != purchaseIds.size()) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "部分采购单不属于当前用户或采购当状态不正确，无法领取");
+            }
+            // 批量更新采购单状态
+            UpdateWrapper<PurchaseEntity> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.lambda()
+                    .in(PurchaseEntity::getId, purchaseIds)
+                    .set(PurchaseEntity::getStatus, WareConstant.PurchaseStatusEnum.RECEIVED.getCode()) // 使用枚举设置已领取状态
+                    .set(PurchaseEntity::getUpdateTime, new Date());
+            this.update(updateWrapper);
+
+            // 批量更新采购需求状态
+            UpdateWrapper<PurchaseDetailEntity> purchaseDetailUpdateWrapper = new UpdateWrapper<>();
+            purchaseDetailUpdateWrapper.lambda()
+                    .in(PurchaseDetailEntity::getPurchaseId, purchaseIds)
+                    .set(PurchaseDetailEntity::getStatus, WareConstant.PurchaseDetailStatusEnum.PURCHASING.getCode()); // 使用枚举设置正在采购状态
+            purchaseDetailService.update(purchaseDetailUpdateWrapper);
+        }
+    }
+
+    @Override
+    public void updatePurchase(PurchaseEntity purchase) {
+        // 校验是否可以修改
+        Long id = purchase.getId();
+        if (id == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单ID不能为空");
+        }
+        PurchaseEntity existingPurchase = this.getById(id);
+        if (existingPurchase == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "采购单不存在");
+        }
+        // 这里只允许修改状态为新建或已分配的采购单
+        Integer status = existingPurchase.getStatus();
+        if (status != null && status != WareConstant.PurchaseStatusEnum.NEW.getCode() && status != WareConstant.PurchaseStatusEnum.ASSIGNED.getCode()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "只有新建或已分配状态的采购单允许修改");
+        }
+        this.updateById(purchase);
+    }
+
     /**
      * 合并采购需求到采购单
      * @param purchaseMergeDTO
