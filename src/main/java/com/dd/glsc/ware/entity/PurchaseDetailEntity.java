@@ -2,10 +2,10 @@ package com.dd.glsc.ware.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.dd.common.constant.WareConstant;
 
 import java.math.BigDecimal;
 import java.io.Serializable;
-import java.util.Date;
 
 import com.dd.common.valid.group.AddGroup;
 import com.dd.common.valid.group.UpdateGroup;
@@ -57,7 +57,22 @@ public class PurchaseDetailEntity implements Serializable {
 	private Long wareId;
 	/**
 	 * 状态[0新建，1已分配，2正在采购，3已完成，4采购失败]
+	 * 使用 {@link WareConstant.PurchaseDetailStatusEnum} 表示采购明细状态
 	 */
 	private Integer status;
+
+	/**
+	 * 获取状态枚举
+	 */
+	public WareConstant.PurchaseDetailStatusEnum getStatusEnum() {
+		return WareConstant.PurchaseDetailStatusEnum.fromCode(this.status);
+	}
+
+	/**
+	 * 设置状态（通过枚举）
+	 */
+	public void setStatusEnum(WareConstant.PurchaseDetailStatusEnum statusEnum) {
+		this.status = (statusEnum == null ? null : statusEnum.getCode());
+	}
 
 }

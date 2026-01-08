@@ -1,29 +1,27 @@
 package com.dd.glsc.ware.service.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.dd.common.common.BusinessException;
 import com.dd.common.common.ErrorCode;
+import com.dd.common.constant.WareConstant;
 import com.dd.glsc.ware.entity.PurchaseDetailEntity;
+import com.dd.glsc.ware.entity.PurchaseEntity;
 import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
 import com.dd.glsc.ware.service.PurchaseDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Date;
 import java.util.Map;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dd.common.utils.PageUtils;
 import com.dd.common.utils.Query;
-
 import com.dd.glsc.ware.dao.PurchaseDao;
-import com.dd.glsc.ware.entity.PurchaseEntity;
 import com.dd.glsc.ware.service.PurchaseService;
-import org.springframework.transaction.annotation.Transactional;
 
 
 @Service("purchaseService")
@@ -33,11 +31,13 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         QueryWrapper<PurchaseEntity> purchaseEntityQueryWrapper = new QueryWrapper<>();
-        String status = (String) params.get("status");
-        if (StrUtil.isNotEmpty(status)) {
-            Integer statusInt = Integer.valueOf(status);
-            if (statusInt >= 0 && statusInt <= 4) {
-                purchaseEntityQueryWrapper.lambda().eq(PurchaseEntity::getStatus, statusInt);
+        String statusStr = (String) params.get("status");
+        if (StrUtil.isNotEmpty(statusStr)) {
+            Integer statusInt = Integer.valueOf(statusStr);
+            WareConstant.PurchaseStatusEnum statusEnum = WareConstant.PurchaseStatusEnum.fromCode(statusInt);
+            if (statusEnum != null) {
+                // 仍然按整数存库，但通过枚举校验
+                purchaseEntityQueryWrapper.lambda().eq(PurchaseEntity::getStatus, statusEnum.getCode());
             }
         }
         IPage<PurchaseEntity> page = this.page(
@@ -56,14 +56,23 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
     @Transactional
     public void mergePurchase(PurchaseMergeDTO purchaseMergeDTO) {
         Long purchaseId = purchaseMergeDTO.getPurchaseId();
-        // 检查采购单状态，必须是新建或已分配状态
+
         if (purchaseId == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单不能为空");
+            PurchaseEntity purchase = new PurchaseEntity();
+            // 使用枚举设置新建状态
+            purchase.setStatusEnum(WareConstant.PurchaseStatusEnum.NEW);
+            purchase.setCreateTime(new Date());
+            purchase.setUpdateTime(new Date());
+            this.save(purchase);
+            purchaseId = purchase.getId();
         }
+        // 检查采购单状态，必须是新建或已分配状态
         QueryWrapper<PurchaseEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.lambda().select(PurchaseEntity::getStatus).eq(PurchaseEntity::getId, purchaseId);
-        PurchaseEntity status = this.getOne(queryWrapper);
-        if (status.getStatus() != 0 && status.getStatus() != 1) {
+        PurchaseEntity purchaseStatusEntity = this.getOne(queryWrapper);
+        WareConstant.PurchaseStatusEnum statusEnum = purchaseStatusEntity == null ? null : purchaseStatusEntity.getStatusEnum();
+        // 只允许 新建 或 已分配 状态进行合并
+        if (statusEnum != WareConstant.PurchaseStatusEnum.NEW && statusEnum != WareConstant.PurchaseStatusEnum.ASSIGNED) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单状态不允许合并采购需求");
         }
         Long[] items = purchaseMergeDTO.getItems();
@@ -82,7 +91,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
             updateWrapper.lambda()
                     .in(PurchaseDetailEntity::getId, items)
                     .set(PurchaseDetailEntity::getPurchaseId, purchaseId)
-                    .set(PurchaseDetailEntity::getStatus, 1); // 采购需求状态
+                    .set(PurchaseDetailEntity::getStatus, WareConstant.PurchaseDetailStatusEnum.ASSIGNED.getCode()); // 使用枚举设置已分配状态
             purchaseDetailService.update(updateWrapper);
         }
     }
@@ -90,7 +99,11 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
     @Override
     public PageUtils listByUnreceive(Map<String, Object> params) {
         QueryWrapper<PurchaseEntity> purchaseEntityQueryWrapper = new QueryWrapper<>();
-        purchaseEntityQueryWrapper.lambda().in(PurchaseEntity::getStatus, 0, 1);
+        // 只查 新建 和 已分配 状态
+        purchaseEntityQueryWrapper.lambda()
+                .in(PurchaseEntity::getStatus,
+                        WareConstant.PurchaseStatusEnum.NEW.getCode(),
+                        WareConstant.PurchaseStatusEnum.ASSIGNED.getCode());
 
         IPage<PurchaseEntity> page = this.page(
                 new Query<PurchaseEntity>().getPage(params),

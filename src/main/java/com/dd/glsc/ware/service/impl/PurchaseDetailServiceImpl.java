@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dd.common.common.BaseResponse;
 import com.dd.common.common.BusinessException;
 import com.dd.common.common.ErrorCode;
+import com.dd.common.constant.WareConstant;
 import com.dd.common.to.SkuInfoTO;
 import com.dd.common.to.SkuTotalPriceTO;
 import com.dd.common.utils.PageUtils;
@@ -55,8 +56,10 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
         String status = (String) params.get("status");
         if (StrUtil.isNotEmpty(status)) {
             Integer s = Integer.parseInt(status);
-            if (s >= 0 && s <= 4) {
-                purchaseDetailEntityQueryWrapper.lambda().eq(PurchaseDetailEntity::getStatus, s);
+            // 使用枚举校验状态值
+            WareConstant.PurchaseDetailStatusEnum statusEnum = WareConstant.PurchaseDetailStatusEnum.fromCode(s);
+            if (statusEnum != null) {
+                purchaseDetailEntityQueryWrapper.lambda().eq(PurchaseDetailEntity::getStatus, statusEnum.getCode());
             }
         }
         String wareId = (String) params.get("wareId");
@@ -131,7 +134,8 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
     public void updatePurchaseDetail(PurchaseDetailEntity purchaseDetail) {
         // 校验是否可修改
         PurchaseDetailEntity purchase = this.getById(purchaseDetail.getId());
-        if (purchase == null || purchase.getStatus() != 0) {
+        // 使用枚举判断状态，只允许新建状态修改
+        if (purchase == null || purchase.getStatusEnum() != WareConstant.PurchaseDetailStatusEnum.NEW) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单不存在或已分配");
         }
         // 修改采购金额
@@ -166,7 +170,8 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
         // 校验是否可删除
         List<PurchaseDetailEntity> purchaseDetails = this.listByIds(list);
         for (PurchaseDetailEntity purchaseDetail : purchaseDetails) {
-            if (purchaseDetail.getStatus() != 0) {
+            // 使用枚举判断状态，只允许新建状态删除
+            if (purchaseDetail.getStatusEnum() != WareConstant.PurchaseDetailStatusEnum.NEW) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单已分配，无法删除");
             }
         }
