@@ -4,6 +4,9 @@ import java.util.Arrays;
 import java.util.Map;
 
 //import org.apache.shiro.authz.annotation.RequiresPermissions;
+import com.dd.common.common.BaseResponse;
+import com.dd.common.common.ResultUtils;
+import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +33,29 @@ import com.dd.common.utils.R;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    /**
+     * 合并采购需求到采购单
+     */
+    @RequestMapping("/merge")
+    //@RequiresPermissions("ware:purchase:list")
+    public BaseResponse mergePurchase(@RequestBody PurchaseMergeDTO purchaseMergeDTO){
+        purchaseService.mergePurchase(purchaseMergeDTO);
+        return ResultUtils.success();
+    }
+
+    /**
+     * 获取所有新建或已分配的采购单列表
+     */
+    @RequestMapping("/unreceive/list")
+    //@RequiresPermissions("ware:purchase:list")
+    public R listByUnreceive(@RequestParam Map<String, Object> params){
+        PageUtils page = purchaseService.listByUnreceive(params);
+
+        return R.ok().put("page", page);
+    }
+
+
 
     /**
      * 列表
