@@ -30,5 +30,12 @@ public interface PurchaseService extends IService<PurchaseEntity> {
      * @return
      */
     PageUtils listByUnreceive(Map<String, Object> params);
+
+    /**
+     * 获取所有采购单列表，支持按状态和关键字查询
+     * @param params
+     * @return
+     */
+    PageUtils queryPageOnCondition(Map<String, Object> params);
 }
 

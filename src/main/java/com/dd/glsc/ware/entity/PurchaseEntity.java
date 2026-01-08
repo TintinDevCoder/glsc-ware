@@ -12,7 +12,6 @@ import java.util.Date;
 /**
  * 采购信息
  *
- * 使用 {@link PurchaseStatusEnum} 表示采购单状态
  *
  * @author dd
  * @email 18211882344@163.com

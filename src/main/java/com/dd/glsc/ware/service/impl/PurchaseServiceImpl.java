@@ -31,6 +31,16 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         QueryWrapper<PurchaseEntity> purchaseEntityQueryWrapper = new QueryWrapper<>();
+        IPage<PurchaseEntity> page = this.page(
+                new Query<PurchaseEntity>().getPage(params),
+                purchaseEntityQueryWrapper
+        );
+
+        return new PageUtils(page);
+    }
+    @Override
+    public PageUtils queryPageOnCondition(Map<String, Object> params) {
+        QueryWrapper<PurchaseEntity> purchaseEntityQueryWrapper = new QueryWrapper<>();
         String statusStr = (String) params.get("status");
         if (StrUtil.isNotEmpty(statusStr)) {
             Integer statusInt = Integer.valueOf(statusStr);
@@ -40,6 +50,14 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
                 purchaseEntityQueryWrapper.lambda().eq(PurchaseEntity::getStatus, statusEnum.getCode());
             }
         }
+        String key = (String) params.get("key");
+        if (StrUtil.isNotEmpty(key)) {
+            purchaseEntityQueryWrapper.lambda().and(wrapper ->
+                    wrapper.eq(PurchaseEntity::getId, key)
+                            .or()
+                            .like(PurchaseEntity::getAssigneeName, key)
+            );
+        }
         IPage<PurchaseEntity> page = this.page(
                 new Query<PurchaseEntity>().getPage(params),
                 purchaseEntityQueryWrapper
@@ -47,7 +65,6 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
 
         return new PageUtils(page);
     }
-
     /**
      * 合并采购需求到采购单
      * @param purchaseMergeDTO
@@ -94,6 +111,10 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
                     .set(PurchaseDetailEntity::getStatus, WareConstant.PurchaseDetailStatusEnum.ASSIGNED.getCode()); // 使用枚举设置已分配状态
             purchaseDetailService.update(updateWrapper);
         }
+        PurchaseEntity purchase = new PurchaseEntity();
+        purchase.setId(purchaseId);
+        purchase.setUpdateTime(new Date());
+        this.updateById(purchase);
     }
 
     @Override
@@ -112,5 +133,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
 
         return new PageUtils(page);
     }
+
+
 
 }

@@ -63,7 +63,7 @@ public class PurchaseController {
     @RequestMapping("/list")
     //@RequiresPermissions("ware:purchase:list")
     public R list(@RequestParam Map<String, Object> params){
-        PageUtils page = purchaseService.queryPage(params);
+        PageUtils page = purchaseService.queryPageOnCondition(params);
 
         return R.ok().put("page", page);
     }
