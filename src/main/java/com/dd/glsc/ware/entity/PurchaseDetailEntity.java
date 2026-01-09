@@ -55,6 +55,10 @@ public class PurchaseDetailEntity implements Serializable {
 	 */
     @NotNull(message = "必须指定仓库", groups = {AddGroup.class})
 	private Long wareId;
+    /**
+     * 采购失败原因
+     */
+    private String reason;
 	/**
 	 * 状态[0新建，1已分配，2正在采购，3已完成，4采购失败]
 	 * 使用 {@link WareConstant.PurchaseDetailStatusEnum} 表示采购明细状态

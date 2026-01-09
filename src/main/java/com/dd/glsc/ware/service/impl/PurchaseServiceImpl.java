@@ -8,15 +8,19 @@ import com.dd.common.constant.WareConstant;
 import com.dd.common.utils.R;
 import com.dd.glsc.ware.entity.PurchaseDetailEntity;
 import com.dd.glsc.ware.entity.PurchaseEntity;
+import com.dd.glsc.ware.entity.WareSkuEntity;
+import com.dd.glsc.ware.entity.dto.PurchaseDoneDTO;
+import com.dd.glsc.ware.entity.dto.PurchaseDoneItem;
 import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
 import com.dd.glsc.ware.service.PurchaseDetailService;
+import com.dd.glsc.ware.service.WareSkuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -30,6 +34,8 @@ import com.dd.glsc.ware.service.PurchaseService;
 public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity> implements PurchaseService {
     @Autowired
     private PurchaseDetailService purchaseDetailService;
+    @Autowired
+    private WareSkuService wareSkuService;
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         QueryWrapper<PurchaseEntity> purchaseEntityQueryWrapper = new QueryWrapper<>();
@@ -102,6 +108,81 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
         }
     }
 
+    /**
+     * 采购单完成
+     * @param purchaseDoneDTO
+     */
+    @Override
+    @Transactional
+    public void purchaseDone(PurchaseDoneDTO purchaseDoneDTO) {
+        // 校验采购单是否是属于当前用户
+        Long userId = purchaseDoneDTO.getUserId();
+        Long purchaseId = purchaseDoneDTO.getId();
+        QueryWrapper<PurchaseEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lambda()
+                .eq(PurchaseEntity::getId, purchaseId);
+        PurchaseEntity entity = this.getOne(queryWrapper);
+        if (userId == null || entity.getAssigneeId() != userId) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单不属于当前用户，无法完成");
+        }
+        // 校验采购单状态
+        if (entity.getStatus() != WareConstant.PurchaseStatusEnum.RECEIVED.getCode()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "采购单状态不正确，无法完成");
+        }
+        // 验证采购项是否属于采购单&采购项是否存在
+        PurchaseDoneItem[] items = purchaseDoneDTO.getItems();
+        QueryWrapper<PurchaseDetailEntity> purchaseDetailEntityQueryWrapper = new QueryWrapper<>();
+        purchaseDetailEntityQueryWrapper.lambda()
+                .in(PurchaseDetailEntity::getId, Arrays.stream(items).map(item -> item.getItemId()).collect(Collectors.toList()))
+                .eq(PurchaseDetailEntity::getPurchaseId, purchaseId);
+        long detailCount = purchaseDetailService.count(purchaseDetailEntityQueryWrapper);
+        if (detailCount != items.length) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "部分采购项不属于该采购单，无法完成");
+        }
+        // 更新采购需求状态
+        boolean flag = true;
+        List<PurchaseDetailEntity> updateList = new LinkedList<>();
+        List<PurchaseDetailEntity> successList = new LinkedList<>();
+        if (items != null && items.length > 0) {
+            for (PurchaseDoneItem item : items) {
+                PurchaseDetailEntity purchaseDetailEntity = new PurchaseDetailEntity();
+                purchaseDetailEntity.setId(item.getItemId());
+                purchaseDetailEntity.setStatus(item.getStatus());
+                purchaseDetailEntity.setReason(item.getReason());
+                updateList.add(purchaseDetailEntity);
+                if (item.getStatus() == WareConstant.PurchaseDetailStatusEnum.FAILED.getCode()) {
+                    flag = false;
+                }else {
+                    successList.add(purchaseDetailEntity);
+                }
+            }
+            purchaseDetailService.updateBatchById(updateList);
+        }
+        // 更新采购单状态
+        // 校验是否已经采购全部
+        QueryWrapper<PurchaseDetailEntity> checkWrapper = new QueryWrapper<>();
+        checkWrapper.lambda()
+                .eq(PurchaseDetailEntity::getPurchaseId, purchaseId)
+                .eq(PurchaseDetailEntity::getStatus, WareConstant.PurchaseDetailStatusEnum.PURCHASING.getCode());
+        long count = purchaseDetailService.count(checkWrapper);
+        // 采购全部完成
+        if (count == 0) {
+            PurchaseEntity purchaseEntity = new PurchaseEntity();
+            purchaseEntity.setId(purchaseId);
+            purchaseEntity.setUpdateTime(new Date());
+            purchaseEntity.setStatus(flag ? WareConstant.PurchaseStatusEnum.FINISHED.getCode() : WareConstant.PurchaseStatusEnum.ERROR.getCode()); // 使用枚举设置状态
+            this.updateById(purchaseEntity);
+        }
+        // 成功采购的进行入库
+        List<Long> purchaseIds = successList.stream().map(success -> success.getId()).collect(Collectors.toList());
+        List<PurchaseDetailEntity> purchaseDetailEntities = purchaseDetailService.getBaseMapper().selectByIds(purchaseIds);
+        for (PurchaseDetailEntity detail : purchaseDetailEntities) {
+            Long skuId = detail.getSkuId();
+            Long wareId = detail.getWareId();
+            Integer skuNum = detail.getSkuNum();
+            wareSkuService.addStock(skuId, wareId, skuNum);
+        }
+    }
     @Override
     public void updatePurchase(PurchaseEntity purchase) {
         // 校验是否可以修改

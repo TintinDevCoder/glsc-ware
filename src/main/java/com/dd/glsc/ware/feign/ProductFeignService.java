@@ -1,6 +1,7 @@
 package com.dd.glsc.ware.feign;
 
 import com.dd.common.common.BaseResponse;
+import com.dd.common.to.SkuInfoTO;
 import com.dd.common.to.SkuTotalPriceTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,7 +23,7 @@ public interface ProductFeignService {
      * @return
      */
     @RequestMapping("/product/skuinfo/get/sku")
-    public BaseResponse getSkuOnConditon(@RequestParam Map<String, Object> params);
+    public BaseResponse<List<SkuInfoTO>> getSkuOnConditon(@RequestParam Map<String, Object> params);
 
     /**
      * 计算sku总价

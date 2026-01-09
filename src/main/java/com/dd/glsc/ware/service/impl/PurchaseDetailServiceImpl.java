@@ -79,19 +79,11 @@ public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailDao, Pu
         // 设定参数
         param.put("ids", skuIdList);
         // 获取 SKU 信息
-        BaseResponse skuOnConditon = productFeignService.getSkuOnConditon(param);
-        Object data = skuOnConditon.getData();
-        // 安全转换远程返回的列表，避免 LinkedHashMap 强转异常
+        BaseResponse<List<SkuInfoTO>> skuOnConditon = productFeignService.getSkuOnConditon(param);
+        List<SkuInfoTO> data = skuOnConditon.getData();
         List<SkuInfoTO> skuInfoList = new ArrayList<>();
-        if (data instanceof List<?>) {
-            ObjectMapper mapper = new ObjectMapper();
-            for (Object item : (List<?>) data) {
-                // 远程返回可能是 Map，需要逐个转换为 SkuInfoTO
-                SkuInfoTO skuInfo = mapper.convertValue(item, SkuInfoTO.class);
-                skuInfoList.add(skuInfo);
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid data returned from SKU service");
+        for (SkuInfoTO skuInfo : data) {
+            skuInfoList.add(skuInfo);
         }
         // 组装 SKU ID 和 SKU 名称的映射关系
         Map<Long, String> skuIdNameMap = new HashMap<>();

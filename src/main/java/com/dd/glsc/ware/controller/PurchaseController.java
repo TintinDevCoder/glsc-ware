@@ -7,6 +7,7 @@ import java.util.Map;
 //import org.apache.shiro.authz.annotation.RequiresPermissions;
 import com.dd.common.common.BaseResponse;
 import com.dd.common.common.ResultUtils;
+import com.dd.glsc.ware.entity.dto.PurchaseDoneDTO;
 import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,18 @@ import com.dd.common.utils.R;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    /**
+     * 采购单完成
+     * @param purchaseDoneDTO
+     * @return
+     */
+    @RequestMapping("/done")
+    //@RequiresPermissions("ware:purchase:list")
+    public BaseResponse purchaseDone(@RequestBody PurchaseDoneDTO purchaseDoneDTO){
+        purchaseService.purchaseDone(purchaseDoneDTO);
+        return ResultUtils.success();
+    }
 
     /**
      * 领取采购单

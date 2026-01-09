@@ -3,6 +3,7 @@ package com.dd.glsc.ware.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.dd.common.utils.PageUtils;
 import com.dd.glsc.ware.entity.PurchaseEntity;
+import com.dd.glsc.ware.entity.dto.PurchaseDoneDTO;
 import com.dd.glsc.ware.entity.dto.PurchaseMergeDTO;
 
 import java.util.List;
@@ -50,5 +51,11 @@ public interface PurchaseService extends IService<PurchaseEntity> {
      * @param purchase
      */
     void updatePurchase(PurchaseEntity purchase);
+
+    /**
+     * 采购单完成
+     * @param purchaseDoneDTO
+     */
+    void purchaseDone(PurchaseDoneDTO purchaseDoneDTO);
 }
 
