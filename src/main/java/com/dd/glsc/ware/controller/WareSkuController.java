@@ -1,9 +1,15 @@
 package com.dd.glsc.ware.controller;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 //import org.apache.shiro.authz.annotation.RequiresPermissions;
+import com.dd.common.common.BaseResponse;
+import com.dd.common.common.ResultUtils;
+import com.dd.common.to.WareSkuTO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,6 +37,13 @@ public class WareSkuController {
     @Autowired
     private WareSkuService wareSkuService;
 
+
+    @RequestMapping("/hasStack")
+    //@RequiresPermissions("ware:waresku:list")
+    public BaseResponse<List<WareSkuTO>> hasStackBySkuId(@RequestBody List<Long> skuIds){
+        List<WareSkuTO> stackBySkuId = wareSkuService.getStackBySkuId(skuIds);
+        return ResultUtils.success(stackBySkuId);
+    }
     /**
      * 列表
      */

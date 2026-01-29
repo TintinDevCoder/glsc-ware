@@ -3,6 +3,7 @@ package com.dd.glsc.ware.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.dd.common.common.BaseResponse;
 import com.dd.common.to.SkuInfoTO;
+import com.dd.common.to.WareSkuTO;
 import com.dd.glsc.ware.feign.ProductFeignService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +95,12 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
             }
             this.save(wareSkuEntity);
         }}
+    }
+
+    @Override
+    public List<WareSkuTO> getStackBySkuId(List<Long> skuIds) {
+        List<WareSkuTO> skuStockByIds = baseMapper.getSkuStockByIds(skuIds);
+        return skuStockByIds;
     }
 
 }

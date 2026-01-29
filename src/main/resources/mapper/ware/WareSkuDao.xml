@@ -17,6 +17,20 @@
         SET stock = stock + #{skuNum}
         WHERE sku_id = #{skuId} AND ware_id = #{wareId}
     </update>
+    <select id="getSkuStockByIds" resultType="com.dd.common.to.WareSkuTO">
+        SELECT
+        sku_id AS wareId,
+        SUM(COALESCE(stock, 0)) - SUM(COALESCE(stock_locked, 0)) AS stock
+        FROM
+        wms_ware_sku
+        WHERE
+        sku_id IN
+        <foreach collection="skuIds" item="skuId" open="(" separator="," close=")">
+            #{skuId}
+        </foreach>
+        GROUP BY
+        sku_id
+    </select>
 
 
 </mapper>
